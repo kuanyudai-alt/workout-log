@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#173b57">
+<title>每日重訓紀錄</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#17212b;background:#f4f6f8}
+*{box-sizing:border-box}body{margin:0;padding:16px}.wrap{max-width:1000px;margin:0 auto}
+header{margin:8px 0 22px}h1{margin:0 0 6px;font-size:28px}p{margin:0;color:#586574}
+.panel{background:white;border:1px solid #dce2e8;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 3px 12px #14233308}
+h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+label{display:block;font-size:13px;color:#4c5968;margin-bottom:6px}
+input,select,textarea{font:inherit;width:100%;padding:11px 12px;border:1px solid #cbd4de;border-radius:9px;background:white;color:#17212b}
+button{font:inherit;border:0;border-radius:9px;padding:11px 15px;cursor:pointer;font-weight:650}
+.primary{background:#1e5b8f;color:white}.secondary{background:#eaf0f5;color:#243746}.danger{background:#fff0ef;color:#a32922}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.muted{color:#647181;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #e6ebef;vertical-align:top}th{color:#566372;font-weight:650;background:#f8fafb}
+.table-wrap{overflow-x:auto}.empty{padding:18px;text-align:center;color:#687583;background:#f8fafb;border-radius:10px}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f5f8fa;border-radius:10px;padding:12px}.stat strong{display:block;font-size:22px;margin-top:4px}
+.record-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.status{padding:10px 12px;border-radius:9px;background:#edf5fb;color:#234c6a;margin:10px 0;font-size:14px}
+.hidden{display:none!important}.authbox{max-width:460px;margin:30px auto}.authbox .field{margin:12px 0}.topline{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media(max-width:720px){body{padding:12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.statrow{grid-template-columns:1fr 1fr}.record-head{align-items:flex-start;flex-direction:column}}
+@media(max-width:420px){.grid{grid-template-columns:1fr}.statrow{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="topline">
+ <div><h1>每日重訓紀錄</h1><p>手機與電腦共用雲端紀錄</p></div>
+ <button id="logout" class="secondary hidden">登出</button>
+</header>
+
+<section id="authPanel" class="panel authbox">
+ <h2>登入重訓紀錄</h2>
+ <p>請在手機與電腦使用相同的電子郵件帳號。</p>
+ <div class="field"><label for="email">電子郵件</label><input id="email" type="email" autocomplete="email" placeholder="name@example.com"></div>
+ <div class="field"><label for="password">密碼（至少 6 個字元）</label><input id="password" type="password" autocomplete="current-password" placeholder="輸入密碼"></div>
+ <div class="actions"><button id="login" class="primary">登入</button><button id="signup" class="secondary">建立帳號</button></div>
+ <div id="authStatus" class="status">第一次使用請先建立帳號。若系統要求驗證電子郵件，請先到信箱完成驗證。</div>
+</section>
+
+<div id="app" class="hidden">
+ <div id="appStatus" class="status">正在連線雲端資料庫…</div>
+ <section class="panel">
+  <h2>新增訓練項目</h2>
+  <div class="grid">
+   <div><label for="date">訓練日期</label><input id="date" type="date"></div>
+   <div><label for="exercise">器材／動作名稱</label><input id="exercise" list="suggestions" placeholder="例如：史密斯臥推"><datalist id="suggestions"><option>史密斯臥推</option><option>高位下拉</option><option>坐姿划船</option><option>腿推機</option><option>羅馬尼亞硬舉</option><option>啞鈴肩推</option><option>二頭彎舉</option><option>三頭下壓</option><option>平板撐</option></datalist></div>
+   <div><label for="weight">重量</label><input id="weight" type="number" min="0" step="0.5" placeholder="例如：30"></div>
+   <div><label for="unit">重量單位</label><select id="unit"><option value="kg">公斤（kg）</option><option value="lb">磅（lb）</option><option value="自體重量">自體重量</option></select></div>
+   <div><label for="reps">每組次數</label><input id="reps" type="number" min="0" step="1" placeholder="例如：8"></div>
+   <div><label for="sets">組數</label><input id="sets" type="number" min="1" step="1" value="3"></div>
+   <div><label for="effort">訓練感受</label><select id="effort"><option value="">未記錄</option><option>輕鬆</option><option>適中</option><option>接近力竭</option><option>達到力竭</option></select></div>
+   <div><label for="note">備註（選填）</label><input id="note" placeholder="例如：最後一組動作不穩"></div>
+  </div>
+  <div class="actions"><button class="primary" id="add">新增這個動作</button><button class="secondary" id="clearForm">清空欄位</button></div>
+  <p class="muted" style="margin-top:10px">若每組重量或次數不同，請分別新增紀錄，並在備註標明第幾組。</p>
+ </section>
+
+ <section class="panel">
+  <div class="record-head"><h2 style="margin:0">當日訓練</h2><div><label for="viewDate" style="display:inline;margin-right:6px">查看日期</label><input id="viewDate" type="date" style="width:auto"></div></div>
+  <div class="statrow">
+   <div class="stat"><span class="muted">動作項目</span><strong id="statExercises">0</strong></div>
+   <div class="stat"><span class="muted">總組數</span><strong id="statSets">0</strong></div>
+   <div class="stat"><span class="muted">估算訓練量</span><strong id="statVolume">0</strong><span class="muted">重量 × 次數 × 組數</span></div>
+  </div>
+  <div id="todayList" style="margin-top:14px"></div>
+ </section>
+
+ <section class="panel">
+  <div class="record-head"><h2 style="margin:0">歷史紀錄</h2><button class="secondary" id="export">匯出 CSV</button></div>
+  <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px;margin-bottom:14px">
+   <div><label for="filterExercise">依動作篩選</label><input id="filterExercise" placeholder="輸入動作名稱"></div>
+   <div><label for="filterDate">依日期篩選</label><input id="filterDate" type="date"></div>
+  </div>
+  <div id="historyList"></div>
+  <p class="muted" style="margin-top:8px">資料儲存在 Supabase 雲端。請在手機與電腦登入同一帳號。</p>
+ </section>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://vdccpmdiohvcyjeothtn.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p22Pm72Ny3yjFibnBpPD0A___fvLHDP';
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const $ = id => document.getElementById(id);
+const today = new Date();
+const localDate = d => {const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10)};
+$('date').value=localDate(today); $('viewDate').value=localDate(today);
+let records=[], currentUser=null;
+function setStatus(msg, isError=false){$('appStatus').textContent=msg;$('appStatus').style.background=isError?'#fff0ef':'#edf5fb';$('appStatus').style.color=isError?'#a32922':'#234c6a'}
+function authMessage(msg,isError=false){$('authStatus').textContent=msg;$('authStatus').style.background=isError?'#fff0ef':'#edf5fb';$('authStatus').style.color=isError?'#a32922':'#234c6a'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function fromDb(r){return {id:r.id,date:r.workout_date,exercise:r.exercise,weight:r.weight===null?null:Number(r.weight),unit:r.unit,reps:r.reps,sets:r.sets,effort:r.effort||'',note:r.note||'',created:r.created_at?Date.parse(r.created_at):0}}
+async function loadRecords(){
+ if(!currentUser)return;
+ setStatus('正在讀取雲端紀錄…');
+ const {data,error}=await client.from('workout_logs').select('*').order('workout_date',{ascending:false}).order('created_at',{ascending:false});
+ if(error){setStatus('讀取失敗：'+error.message,true);return}
+ records=(data||[]).map(fromDb);render();setStatus('雲端同步完成。此帳號目前有 '+records.length+' 筆紀錄。');
+}
+async function addRecord(){
+ const date=$('date').value, exercise=$('exercise').value.trim(), unit=$('unit').value;
+ const weight=$('weight').value===''?null:Number($('weight').value), reps=Number($('reps').value), sets=Number($('sets').value);
+ if(!date||!exercise){alert('請填寫訓練日期及器材／動作名稱。');return}
+ if(reps<0||!Number.isFinite(reps)||sets<1||!Number.isInteger(sets)){alert('請輸入有效的次數與組數。');return}
+ if(unit!=='自體重量'&&(weight===null||weight<0||!Number.isFinite(weight))){alert('請輸入有效重量。自體重量訓練可選擇「自體重量」。');return}
+ $('add').disabled=true;
+ const row={user_id:currentUser.id,workout_date:date,exercise,weight:unit==='自體重量'?null:weight,unit,reps,sets,effort:$('effort').value||null,note:$('note').value.trim()||null};
+ const {error}=await client.from('workout_logs').insert(row);
+ $('add').disabled=false;
+ if(error){setStatus('新增失敗：'+error.message,true);return}
+ $('viewDate').value=date;$('exercise').value='';$('weight').value='';$('reps').value='';$('sets').value='3';$('effort').value='';$('note').value='';
+ await loadRecords();$('exercise').focus();
+}
+function volume(r){return r.weight===null?0:r.weight*r.reps*r.sets}
+function rowHtml(r,withDate=false){return `<tr>${withDate?`<td>${esc(r.date)}</td>`:''}<td>${esc(r.exercise)}${r.note?`<div class="muted">${esc(r.note)}</div>`:''}</td><td>${r.weight===null?'自體重量':esc(r.weight)+' '+esc(r.unit)}</td><td>${r.reps}</td><td>${r.sets}</td><td>${esc(r.effort||'—')}</td><td><button class="danger" data-del="${esc(r.id)}">刪除</button></td></tr>`}
+function table(items,withDate=false){if(!items.length)return '<div class="empty">目前沒有紀錄。</div>';return `<div class="table-wrap"><table><thead><tr>${withDate?'<th>日期</th>':''}<th>器材／動作</th><th>重量</th><th>次數／組</th><th>組數</th><th>感受</th><th>操作</th></tr></thead><tbody>${items.map(r=>rowHtml(r,withDate)).join('')}</tbody></table></div>`}
+function render(){
+ const date=$('viewDate').value;
+ const day=records.filter(r=>r.date===date).sort((a,b)=>a.created-b.created);
+ $('statExercises').textContent=day.length;$('statSets').textContent=day.reduce((s,r)=>s+r.sets,0);
+ $('statVolume').textContent=Math.round(day.reduce((s,r)=>s+volume(r),0)).toLocaleString();
+ $('todayList').innerHTML=table(day);
+ const q=$('filterExercise').value.trim().toLowerCase(), fd=$('filterDate').value;
+ const hist=records.filter(r=>(!q||r.exercise.toLowerCase().includes(q))&&(!fd||r.date===fd)).sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
+ $('historyList').innerHTML=table(hist,true);
+}
+async function deleteRecord(id){
+ if(!confirm('確定刪除這筆紀錄？'))return;
+ const {error}=await client.from('workout_logs').delete().eq('id',id);
+ if(error){setStatus('刪除失敗：'+error.message,true);return}
+ await loadRecords();
+}
+async function login(signUp=false){
+ const email=$('email').value.trim(),password=$('password').value;
+ if(!email||!password){authMessage('請輸入電子郵件與密碼。',true);return}
+ $('login').disabled=true;$('signup').disabled=true;authMessage('處理中…');
+ let result;
+ if(signUp) result=await client.auth.signUp({email,password});
+ else result=await client.auth.signInWithPassword({email,password});
+ $('login').disabled=false;$('signup').disabled=false;
+ if(result.error){authMessage('操作失敗：'+result.error.message,true);return}
+ if(signUp&&!result.data.session){authMessage('帳號已建立。請查看電子郵件並完成驗證，再回來登入。');return}
+ if(result.data.user){currentUser=result.data.user;showApp();await loadRecords()}
+}
+function showApp(){ $('authPanel').classList.add('hidden');$('app').classList.remove('hidden');$('logout').classList.remove('hidden') }
+function showAuth(){ $('authPanel').classList.remove('hidden');$('app').classList.add('hidden');$('logout').classList.add('hidden') }
+$('login').addEventListener('click',()=>login(false));$('signup').addEventListener('click',()=>login(true));
+$('password').addEventListener('keydown',e=>{if(e.key==='Enter')login(false)});
+$('logout').addEventListener('click',async()=>{await client.auth.signOut();currentUser=null;records=[];showAuth();authMessage('已登出。')});
+$('add').addEventListener('click',addRecord);
+$('clearForm').addEventListener('click',()=>{['exercise','weight','reps','note'].forEach(id=>$(id).value='');$('sets').value='3';$('effort').value=''});
+$('viewDate').addEventListener('change',render);$('filterExercise').addEventListener('input',render);$('filterDate').addEventListener('change',render);
+document.addEventListener('click',e=>{const id=e.target?.dataset?.del;if(id)deleteRecord(id)});
+$('export').addEventListener('click',()=>{
+ if(!records.length){alert('目前沒有可匯出的紀錄。');return}
+ const headers=['日期','器材／動作','重量','重量單位','每組次數','組數','訓練感受','備註'];
+ const lines=[headers,...records.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(r=>[r.date,r.exercise,r.weight??'',r.unit,r.reps,r.sets,r.effort,r.note])];
+ const csv='\uFEFF'+lines.map(line=>line.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='重訓紀錄.csv';a.click();URL.revokeObjectURL(url);
+});
+(async()=>{const {data}=await client.auth.getSession();if(data.session){currentUser=data.session.user;showApp();await loadRecords()}else showAuth()})();
+</script>
+</body>
+</html>
